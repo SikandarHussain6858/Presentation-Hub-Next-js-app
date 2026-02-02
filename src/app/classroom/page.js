@@ -1,8 +1,8 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function Classroom() {
+function ClassroomContent() {
     const params = useSearchParams();
     const [code, setCode] = useState('');
     const [presentation, setPresentation] = useState(null);
@@ -210,5 +210,17 @@ export default function Classroom() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function Classroom() {
+    return (
+        <Suspense fallback={
+            <div className="container" style={{ padding: '4rem', textAlign: 'center' }}>
+                <div>Loading classroom...</div>
+            </div>
+        }>
+            <ClassroomContent />
+        </Suspense>
     );
 }
