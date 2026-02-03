@@ -7,7 +7,7 @@ import { signToken } from '../../../../lib/auth';
 export async function POST(request) {
     try {
         const { email, password } = await request.json();
-        
+
         console.log('Registration attempt for email:', email);
 
         await dbConnect();
@@ -27,14 +27,14 @@ export async function POST(request) {
 
         // 3. Create User in MongoDB
         const uid = new Date().getTime().toString() + Math.random().toString(36).substring(2, 9);
-        
+
         user = await User.create({
             email,
             password: hashedPassword,
             uid: uid,
             role: 'user'
         });
-        
+
         console.log('User created in database:', user.email, user.uid);
 
         console.log('User created in database:', user.email, user.uid);
@@ -49,10 +49,10 @@ export async function POST(request) {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 60 * 60 * 24 * 7, // 7 days
+            // maxAge removed to make it a session cookie
             path: '/',
         });
-        
+
         console.log('Registration successful for:', email);
         return response;
 

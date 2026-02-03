@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 
 export function useAuth() {
     const [user, setUser] = useState(null);
@@ -38,7 +38,7 @@ export function useAuth() {
                     setUser(null);
                 }
             }
-            
+
             setLoading(false);
         };
 
@@ -49,7 +49,14 @@ export function useAuth() {
 
     const logout = async () => {
         try {
+            // Clear custom session
             await fetch('/api/auth/check', { method: 'POST' }); // Call POST to logout
+
+            // Clear NextAuth session if active
+            if (status === "authenticated") {
+                await signOut({ redirect: false });
+            }
+
             setUser(null);
             router.push("/login");
             router.refresh(); // Refresh to clear server cached routes if any

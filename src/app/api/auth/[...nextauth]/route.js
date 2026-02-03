@@ -21,14 +21,14 @@ export const authOptions = {
         try {
           await dbConnect();
           const user = await User.findOne({ email: credentials.email }).select('+password');
-          
+
           if (!user) return null;
-          
+
           const isMatch = await bcrypt.compare(credentials.password, user.password || '');
           if (!isMatch) return null;
-          
-          return { 
-            id: user.uid, 
+
+          return {
+            id: user.uid,
             email: user.email,
             name: user.name || user.email.split('@')[0]
           };
@@ -44,10 +44,10 @@ export const authOptions = {
       if (account.provider === "google") {
         try {
           await dbConnect();
-          
+
           // Check if user exists
           let existingUser = await User.findOne({ email: user.email });
-          
+
           if (!existingUser) {
             // Create new user from Google account
             const uid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -65,7 +65,7 @@ export const authOptions = {
             }
             await existingUser.save();
           }
-          
+
           // Attach uid to user object for JWT callback
           user.id = existingUser.uid;
         } catch (error) {
@@ -93,6 +93,7 @@ export const authOptions = {
   },
   session: {
     strategy: 'jwt',
+    maxAge: 24 * 60 * 60, // 24 hours
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
