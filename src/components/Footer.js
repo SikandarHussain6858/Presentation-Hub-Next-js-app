@@ -5,9 +5,10 @@ const Footer = () => {
     return (
         <footer style={{
             background: 'white',
-            borderTop: '1px solid var(--border-color)',
+            borderTop: '1px solid var(--slate-200)',
             padding: '4rem 0 2rem',
-            marginTop: 'auto'
+            marginTop: 'auto',
+            position: 'relative'
         }}>
             <div className="container">
                 <div style={{

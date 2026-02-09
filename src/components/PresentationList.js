@@ -23,9 +23,9 @@ const PresentationList = ({ presentations, onDelete, loading }) => {
                 const res = await fetch(`/api/presentations?id=${presentation._id}`, {
                     method: 'DELETE',
                 });
-                
+
                 const data = await res.json();
-                
+
                 if (data.success) {
                     toast.success('Presentation deleted successfully');
                     if (onDelete) {
@@ -122,85 +122,99 @@ const PresentationList = ({ presentations, onDelete, loading }) => {
                     {presentations.length} {presentations.length === 1 ? 'Presentation' : 'Presentations'}
                 </div>
             </div>
-            <div className="table-container">
-                <table className="table">
-                    <thead>
-                        <tr>
-                            <th>Presentation Name</th>
-                            <th>Course</th>
-                            <th>Code</th>
-                            <th>Upload Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {presentations.map((presentation, index) => (
-                            <tr
-                                key={presentation.uniqueCode || index}
-                                className="animate-fade-in"
-                                style={{ animationDelay: `${index * 50}ms` }}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                {presentations.map((presentation, index) => (
+                    <div
+                        key={presentation.uniqueCode || index}
+                        className="card animate-fade-in"
+                        style={{
+                            padding: '1.5rem',
+                            animationDelay: `${index * 50}ms`,
+                            border: '1px solid var(--border-color)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            height: '100%'
+                        }}
+                    >
+                        <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    background: 'var(--slate-100)',
+                                    borderRadius: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'var(--slate-600)'
+                                }}>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </div>
+                                <span style={{
+                                    background: 'var(--slate-100)',
+                                    color: 'var(--slate-800)',
+                                    padding: '0.25rem 0.75rem',
+                                    borderRadius: '20px',
+                                    fontWeight: '700',
+                                    fontSize: '0.85rem',
+                                    letterSpacing: '0.05em',
+                                    fontFamily: '"Fira Code", monospace'
+                                }}>
+                                    {presentation.uniqueCode}
+                                </span>
+                            </div>
+
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '0.25rem', color: 'var(--slate-900)' }}>
+                                {presentation.presentationName}
+                            </h3>
+                            <p style={{ color: 'var(--slate-500)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                                {presentation.courseName}
+                            </p>
+
+                            <div style={{ fontSize: '0.8rem', color: 'var(--slate-400)', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                <span>Uploaded: {formatDate(presentation.createdAt)}</span>
+                                <span style={{ color: 'var(--warning)', fontWeight: '500' }}>
+                                    {getExpirationText(presentation.createdAt)}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                            <button
+                                onClick={() => copyCode(presentation.uniqueCode)}
+                                className="btn"
+                                style={{ background: 'var(--slate-100)', color: 'var(--slate-700)', fontSize: '0.9rem', padding: '0.6rem' }}
                             >
-                                <td style={{ fontWeight: '500' }}>{presentation.presentationName}</td>
-                                <td>{presentation.courseName}</td>
-                                <td>
-                                    <span style={{
-                                        background: 'var(--slate-100)',
-                                        color: 'var(--slate-800)',
-                                        padding: '0.4rem 0.875rem',
-                                        borderRadius: '6px',
-                                        fontWeight: '600',
-                                        fontSize: '0.9rem',
-                                        letterSpacing: '0.1em',
-                                        display: 'inline-block',
-                                        fontFamily: '"Fira Code", monospace',
-                                        border: '1px solid var(--slate-200)'
-                                    }}>
-                                        {presentation.uniqueCode}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div>{formatDate(presentation.createdAt)}</div>
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--warning)', marginTop: '0.25rem', fontWeight: '500' }}>
-                                        {getExpirationText(presentation.createdAt)}
-                                    </div>
-                                </td>
-                                <td>
-                                    <div className="table-actions" style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <button
-                                            onClick={() => copyCode(presentation.uniqueCode)}
-                                            className="btn btn-success"
-                                            style={{ padding: '0.5rem', fontSize: '0.8rem' }}
-                                            title="Copy code to clipboard"
-                                        >
-                                            Copy
-                                        </button>
-                                        <button
-                                            onClick={() => handleDownload(presentation)}
-                                            className="btn btn-primary"
-                                            style={{ padding: '0.5rem', fontSize: '0.8rem' }}
-                                            title="Download presentation"
-                                        >
-                                            Download
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(presentation)}
-                                            className="btn"
-                                            style={{
-                                                padding: '0.5rem',
-                                                fontSize: '0.8rem',
-                                                background: 'var(--danger)',
-                                                color: 'white',
-                                            }}
-                                            title="Delete presentation"
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                Copy Code
+                            </button>
+                            <button
+                                onClick={() => handleDownload(presentation)}
+                                className="btn btn-primary"
+                                style={{ fontSize: '0.9rem', padding: '0.6rem' }}
+                            >
+                                Download
+                            </button>
+                            <button
+                                onClick={() => handleDelete(presentation)}
+                                className="btn"
+                                style={{
+                                    background: 'white',
+                                    color: 'var(--danger)',
+                                    border: '1px solid var(--danger)',
+                                    gridColumn: '1 / -1',
+                                    fontSize: '0.9rem',
+                                    padding: '0.6rem'
+                                }}
+                            >
+                                Delete File
+                            </button>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );

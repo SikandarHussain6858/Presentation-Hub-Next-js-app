@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { FcGoogle } from 'react-icons/fc';
 import toast from 'react-hot-toast';
+import AuthLayout from '../../components/AuthLayout';
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -90,87 +91,95 @@ const Register = () => {
     };
 
     return (
-        <div className="container">
-            <div className="form-container animate-fade-in">
-                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <h2 className="form-title">Create Account</h2>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-                        Join us to manage your presentations easily
-                    </p>
-                </div>
+        <AuthLayout
+            title="Create your account"
+            subtitle="Get started with Presentation Hub today."
+            isLogin={false}
+        >
+            <button
+                type="button"
+                onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+                className="btn"
+                style={{
+                    width: '100%',
+                    background: 'white',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--slate-700)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.75rem',
+                    padding: '0.75rem',
+                    borderRadius: '2rem',
+                    marginBottom: '1.5rem',
+                    fontWeight: '600'
+                }}
+            >
+                <FcGoogle size={20} />
+                Sign up with Google
+            </button>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>Email Address</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Or sign up with email</span>
+                <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+                <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
+                        <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email Address</label>
                         <input
                             type="email"
                             name="email"
                             value={formData.email}
                             onChange={handleChange}
-                            placeholder="Enter your email"
+                            placeholder=""
+                            style={{ borderRadius: '0.5rem', background: '#f8fafc' }}
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label>Password</label>
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
+                        <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Password</label>
                         <input
                             type="password"
                             name="password"
                             value={formData.password}
                             onChange={handleChange}
-                            placeholder="Enter password (min 6 characters)"
+                            placeholder=""
+                            style={{ borderRadius: '0.5rem', background: '#f8fafc' }}
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label>Confirm Password</label>
+                    <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                        <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Confirm Password</label>
                         <input
                             type="password"
                             name="confirmPassword"
                             value={formData.confirmPassword}
                             onChange={handleChange}
-                            placeholder="Confirm your password"
+                            placeholder=""
+                            style={{ borderRadius: '0.5rem', background: '#f8fafc' }}
                         />
                     </div>
-
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
-                        {loading ? 'Creating Account...' : 'Create Account'}
-                    </button>
-                </form>
-
-                <div style={{ margin: '1.5rem 0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>OR</span>
-                    <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
                 </div>
 
                 <button
-                    type="button"
-                    onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+                    type="submit"
                     className="btn"
-                    style={{ 
-                        width: '100%', 
-                        background: 'white', 
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-primary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.75rem'
+                    style={{
+                        width: '100%',
+                        background: 'var(--slate-900)',
+                        color: 'white',
+                        borderRadius: '2rem',
+                        padding: '0.875rem'
                     }}
+                    disabled={loading}
                 >
-                    <FcGoogle size={20} />
-                    Continue with Google
+                    {loading ? 'Creating Account...' : 'Create Account'}
                 </button>
-
-                <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-muted)' }}>
-                    Already have an account?{' '}
-                    <Link href="/login" style={{ color: 'var(--primary-color)', fontWeight: '600' }}>
-                        Login here
-                    </Link>
-                </p>
-            </div>
-        </div>
+            </form>
+        </AuthLayout>
     );
 };
 

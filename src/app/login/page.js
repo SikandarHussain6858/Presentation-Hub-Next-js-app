@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { FcGoogle } from 'react-icons/fc';
 import toast from 'react-hot-toast';
+import AuthLayout from '../../components/AuthLayout';
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -54,82 +55,89 @@ const Login = () => {
     };
 
     return (
-        <div className="container">
-            <div className="form-container animate-fade-in">
-                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <h2 className="form-title">Welcome Back</h2>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-                        Login to access your presentations
-                    </p>
-                </div>
+        <AuthLayout
+            title="Log in to Presentation Hub"
+            subtitle="Looking for your next presentation? Enter your details below."
+            isLogin={true}
+        >
+            <button
+                type="button"
+                onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+                className="btn"
+                style={{
+                    width: '100%',
+                    background: 'white',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--slate-700)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.75rem',
+                    padding: '0.75rem',
+                    borderRadius: '2rem', // Match example pill shape
+                    marginBottom: '1.5rem',
+                    fontWeight: '600'
+                }}
+            >
+                <FcGoogle size={20} />
+                Sign in with Google
+            </button>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>Email Address</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Or sign in with email</span>
+                <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+                <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
+                        <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Email</label>
                         <input
                             type="email"
                             name="email"
                             value={formData.email}
                             onChange={handleChange}
-                            placeholder="Enter your email"
+                            placeholder=""
+                            style={{ borderRadius: '0.5rem', background: '#f8fafc' }}
                         />
                     </div>
 
-                    <div className="form-group">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <label style={{ marginBottom: 0 }}>Password</label>
-                            {/* Forgot password link - logic not implemented yet */}
-                            <span style={{ fontSize: '0.85rem', color: 'var(--primary-color)', cursor: 'pointer' }}>
-                                Forgot Password?
-                            </span>
-                        </div>
+                    <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                        <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Password</label>
                         <input
                             type="password"
                             name="password"
                             value={formData.password}
                             onChange={handleChange}
-                            placeholder="Enter your password"
+                            placeholder=""
+                            style={{ borderRadius: '0.5rem', background: '#f8fafc' }}
                         />
                     </div>
+                </div>
 
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
-                        {loading ? 'Logging in...' : 'Login'}
-                    </button>
-                </form>
-
-                <div style={{ margin: '1.5rem 0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>OR</span>
-                    <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--slate-500)', cursor: 'pointer' }}>
+                        Forgot Password?
+                    </span>
                 </div>
 
                 <button
-                    type="button"
-                    onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+                    type="submit"
                     className="btn"
-                    style={{ 
-                        width: '100%', 
-                        background: 'white', 
-                        border: '1px solid var(--border-color)',
-                        color: 'var(--text-primary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.75rem'
+                    style={{
+                        width: '100%',
+                        background: 'var(--slate-900)',
+                        color: 'white',
+                        borderRadius: '2rem',
+                        padding: '0.875rem'
                     }}
+                    disabled={loading}
                 >
-                    <FcGoogle size={20} />
-                    Continue with Google
+                    {loading ? 'Logging in...' : 'Log in'}
                 </button>
-
-                <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-muted)' }}>
-                    Don't have an account?{' '}
-                    <Link href="/register" style={{ color: 'var(--primary-color)', fontWeight: '600' }}>
-                        Register here
-                    </Link>
-                </p>
-            </div>
-        </div>
+            </form>
+        </AuthLayout>
     );
 };
 

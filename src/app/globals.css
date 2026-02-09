@@ -57,24 +57,7 @@
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-[data-theme='dark'] {
-  --bg-body: var(--slate-900);
-  --bg-card: var(--slate-800);
-  --text-main: var(--slate-50);
-  --text-muted: var(--slate-400);
-  --border-color: var(--slate-700);
 
-  /* Adjust shadows for dark mode */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
-  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.2);
-
-  /* Form elements */
-  --input-bg: var(--slate-800);
-  --input-border: var(--slate-600);
-}
 
 /* Ensure inputs use these vars */
 .form-group input,
@@ -126,18 +109,10 @@
 }
 
 /* Utility overrides */
-.glass {
-  background: rgba(30, 41, 59, 0.7);
-  /* Darker glass for dark mode */
-  border-color: rgba(255, 255, 255, 0.1);
-}
+
 
 /* Override body bg image for dark mode to be subtle */
-body[data-theme='dark'] {
-  background-image:
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
-}
+
 
 * {
   margin: 0;
@@ -230,15 +205,12 @@ a:hover {
   justify-content: space-between;
 }
 
+/* Brand Text */
 .navbar-brand {
   font-family: 'Outfit', sans-serif;
   font-weight: 800;
   font-size: 1.5rem;
   color: var(--slate-900);
-  background: linear-gradient(135deg, var(--primary-600), var(--primary-800));
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -258,11 +230,12 @@ a:hover {
   font-size: 0.95rem;
   padding: 0.5rem 0.5rem;
   border-radius: var(--radius-md);
+  transition: all 0.2s;
 }
 
 .navbar-links a:not(.btn):hover {
-  color: var(--primary-600);
-  background-color: var(--primary-50);
+  color: var(--slate-900);
+  background-color: var(--slate-100);
 }
 
 .navbar-links .btn {
@@ -289,20 +262,30 @@ a:hover {
   padding: 1rem 2.5rem;
   font-size: 1.125rem;
   border-radius: 9999px;
-  /* Pill shape for hero buttons usually looks better/more modern */
 }
 
+/* Buttons */
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
+  background: var(--slate-900);
   color: white;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid transparent;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
-  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4);
-  transform: translateY(-2px);
+  background: #000000;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Form Focus States - Neutral/Black Theme */
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--slate-900);
+  box-shadow: 0 0 0 2px var(--slate-200);
+  background-color: white;
+  color: var(--slate-900);
 }
 
 .btn-secondary {
