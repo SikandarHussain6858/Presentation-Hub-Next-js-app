@@ -27,12 +27,30 @@ export async function GET(request, { params }) {
             return NextResponse.json({ error: 'File not found' }, { status: 404 });
         }
 
-        // 2. Setup GridFS
+        // 2. Track download event (non-blocking)
+        try {
+            // Fire and forget - don't block the download
+            fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/analytics/track`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    presentationId: presentation._id.toString(),
+                    eventType: 'download',
+                }),
+            }).catch(() => {
+                // Silently fail if tracking fails - don't block download
+            });
+        } catch (trackingError) {
+            console.error('Analytics tracking error (non-blocking):', trackingError);
+            // Continue with download regardless
+        }
+
+        // 3. Setup GridFS
         const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
             bucketName: 'uploads'
         });
 
-        // 3. Open Download Stream
+        // 4. Open Download Stream
         // We need to return a ReadableStream to the client
         // Node streams are not directly compatible with Web Streams used in NextResponse (server-side interface)
         // So we create a simplified iterator/stream response.
@@ -48,7 +66,7 @@ export async function GET(request, { params }) {
             }
         });
 
-        // 4. Return the stream with correct headers for download
+        // 5. Return the stream with correct headers for download
         return new NextResponse(stream, {
             headers: {
                 'Content-Disposition': `attachment; filename="${presentation.fileName}"`,

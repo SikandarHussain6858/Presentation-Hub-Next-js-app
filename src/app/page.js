@@ -1,363 +1,263 @@
 'use client';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { FiUpload, FiMonitor, FiKey, FiArrowRight, FiCheck, FiStar } from 'react-icons/fi';
+import { useState, useEffect, useRef } from 'react';
+
+/* ── Icons ── */
+const UploadIcon = () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16" /><line x1="12" y1="12" x2="12" y2="21" /><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" /></svg>);
+const KeyIcon = () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>);
+const MonitorIcon = () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>);
+const UserPlusIcon = () => (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" /></svg>);
+const ArrowRightIcon = () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>);
+const StarIcon = ({ fill }) => (<svg width="14" height="14" viewBox="0 0 24 24" fill={fill ? '#F59E0B' : 'none'} stroke="#F59E0B" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>);
+
+/* ── Animated counter hook ── */
+function useCountUp(target, duration = 1500, start = false) {
+    const [val, setVal] = useState(0);
+    const ref = useRef(null);
+    useEffect(() => {
+        if (!start || !target) return;
+        let cur = 0;
+        const step = target / (duration / 16);
+        ref.current = setInterval(() => {
+            cur += step;
+            if (cur >= target) { setVal(target); clearInterval(ref.current); }
+            else setVal(Math.floor(cur));
+        }, 16);
+        return () => clearInterval(ref.current);
+    }, [target, duration, start]);
+    return val;
+}
+
+/* ── Intersection observer hook ── */
+function useInView() {
+    const [inView, setInView] = useState(false);
+    const ref = useRef(null);
+    useEffect(() => {
+        const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setInView(true); }, { threshold: 0.2 });
+        if (ref.current) obs.observe(ref.current);
+        return () => obs.disconnect();
+    }, []);
+    return [ref, inView];
+}
+
+const features = [
+    { icon: <UserPlusIcon />, step: '01', title: 'Create Account', desc: 'Sign up in seconds. Get your personal dashboard for managing all presentation files in one place.', color: '#6366f1' },
+    { icon: <UploadIcon />, step: '02', title: 'Upload Your Slides', desc: 'Supports PowerPoint, PDF, Keynote and more. Tag presentations with course names for easy organization.', color: '#8b5cf6' },
+    { icon: <KeyIcon />, step: '03', title: 'Receive an Access Code', desc: 'Every upload generates a unique 6-digit access code instantly — no configuration required.', color: '#ec4899' },
+    { icon: <MonitorIcon />, step: '04', title: 'Present Instantly', desc: 'Enter the code on any classroom computer. Your presentation loads immediately — no sign-in needed.', color: '#0ea5e9' },
+];
+
+/* ── Stat Item (animated on scroll) ── */
+function StatItem({ value, label, suffix = '' }) {
+    const [ref, inView] = useInView();
+    const animated = useCountUp(value, 1400, inView);
+    return (
+        <div ref={ref} style={{ textAlign: 'center', padding: '1.5rem 2rem' }}>
+            <div style={{ fontSize: 'clamp(2rem,4vw,3rem)', fontWeight: 900, color: 'white', letterSpacing: '-0.04em', lineHeight: 1 }}>
+                {animated.toLocaleString()}{suffix}
+            </div>
+            <div style={{ color: 'rgba(148,163,184,0.7)', fontSize: '0.875rem', marginTop: '0.4rem', fontWeight: 500 }}>{label}</div>
+        </div>
+    );
+}
 
 export default function Home() {
-  const [stats, setStats] = useState({ average: 0, count: 0 });
+    const [stats, setStats] = useState({ average: 0, count: 0 });
+    const [animatedCode, setAnimatedCode] = useState('------');
+    const [codeGlow, setCodeGlow] = useState(false);
+    const [featuresRef, featuresInView] = useInView();
 
-  useEffect(() => {
-    fetch('/api/feedback')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setStats(data.data);
-        }
-      })
-      .catch(err => console.error(err));
-  }, []);
+    useEffect(() => {
+        fetch('/api/feedback')
+            .then(res => res.json())
+            .then(data => { if (data.success) setStats(data.data); })
+            .catch(() => {});
+    }, []);
 
-  return (
-    <div className="home animate-fade-in" style={{ backgroundColor: 'var(--slate-50)' }}>
-      {/* 
-        -----------------------------------------------------------------
-        HERO SECTION - Dark Theme to match Auth/Brand
-        -----------------------------------------------------------------
-      */}
-      <div className="home-hero-section" style={{
-        backgroundColor: 'var(--slate-900)',
-        color: 'white',
-        padding: '6rem 0 8rem',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* Ambient Background Effects - Unifying with Black Theme */}
-        <div style={{
-          position: 'absolute',
-          top: '-20%',
-          right: '-10%',
-          width: '800px',
-          height: '800px',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%)',
-          opacity: 1,
-          borderRadius: '50%',
-          pointerEvents: 'none'
-        }}></div>
-        <div style={{
-          position: 'absolute',
-          bottom: '-20%',
-          left: '-10%',
-          width: '600px',
-          height: '600px',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 60%)',
-          opacity: 1,
-          borderRadius: '50%',
-          pointerEvents: 'none'
-        }}></div>
+    // Animate access code with glow pulse
+    useEffect(() => {
+        const codes = ['856992', '341208', '774513', '629047'];
+        let i = 0;
+        const interval = setInterval(() => {
+            setCodeGlow(true);
+            setTimeout(() => {
+                setAnimatedCode(codes[i % codes.length]);
+                setCodeGlow(false);
+                i++;
+            }, 300);
+        }, 2500);
+        return () => clearInterval(interval);
+    }, []);
 
-        <div className="container" style={{ position: 'relative', zIndex: 2 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4rem', flexWrap: 'wrap' }}>
+    return (
+        <div style={{ backgroundColor: 'var(--slate-50)' }}>
+            {/* ── HERO ── */}
+            <section style={{ background: 'var(--slate-900)', color: 'white', padding: '6rem 0 7rem', position: 'relative', overflow: 'hidden' }}>
+                {/* Grid background */}
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '60px 60px', pointerEvents: 'none' }} />
+                {/* Glow blobs */}
+                <div style={{ position: 'absolute', top: '-20%', right: '-5%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none', animation: 'blobFloat 10s ease-in-out infinite alternate' }} />
+                <div style={{ position: 'absolute', bottom: '-10%', left: '-5%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none', animation: 'blobFloat 12s ease-in-out infinite alternate-reverse' }} />
 
-            {/* Left Content */}
-            <div style={{ flex: '1.2', minWidth: '300px' }}>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem 1rem',
-                background: 'rgba(255,255,255,0.1)',
-                borderRadius: '50px',
-                marginBottom: '1.5rem',
-                border: '1px solid rgba(255,255,255,0.1)'
-              }}>
-                <span style={{ width: '8px', height: '8px', background: 'white', borderRadius: '50%' }}></span>
-                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--slate-100)' }}>v2.0 Now Available</span>
-              </div>
+                <div className="container" style={{ position: 'relative', zIndex: 2 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5rem', flexWrap: 'wrap' }}>
+                        {/* Left */}
+                        <div style={{ flex: '1.2', minWidth: '300px', animation: 'heroFadeIn 0.7s both' }}>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.375rem 0.875rem', background: 'rgba(255,255,255,0.07)', borderRadius: '50px', marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.1)', fontSize: '0.82rem', fontWeight: 600, color: 'var(--slate-300)', letterSpacing: '0.02em' }}>
+                                <span style={{ width: '6px', height: '6px', background: '#10b981', borderRadius: '50%', boxShadow: '0 0 6px #10b981', animation: 'pulse 2s ease-in-out infinite' }} />
+                                v2.0 — Now Available
+                            </div>
 
-              <h1 className="animate-fade-in delay-100" style={{
-                fontSize: 'clamp(2.5rem, 5vw, 4rem)',
-                fontWeight: 800,
-                lineHeight: 1.1,
-                marginBottom: '1.5rem',
-                fontFamily: "'Outfit', sans-serif",
-                color: 'white'
-              }}>
-                Master Your <br />
-                <span style={{ color: 'var(--slate-400)' }}>Classroom Slides.</span>
-              </h1>
+                            <h1 style={{ fontSize: 'clamp(2.6rem, 5vw, 4rem)', fontWeight: 800, lineHeight: 1.1, marginBottom: '1.5rem', color: 'white', letterSpacing: '-0.03em' }}>
+                                Master Your<br />
+                                <span style={{ color: 'var(--slate-400)' }}>Classroom Slides.</span>
+                            </h1>
 
-              <p className="animate-fade-in delay-200" style={{
-                fontSize: '1.125rem',
-                color: 'var(--slate-300)',
-                maxWidth: '540px',
-                lineHeight: 1.7,
-                marginBottom: '2.5rem',
-                opacity: 0.9
-              }}>
-                Seamlessly upload, manage, and present your university work with our secure 6-digit code system. No flash drives, no login hassles—just present.
-              </p>
+                            <p style={{ fontSize: '1.1rem', color: 'var(--slate-400)', maxWidth: '520px', lineHeight: 1.75, marginBottom: '2.5rem' }}>
+                                Upload, manage and present your university work using a secure 6-digit access code. No USB drives, no sign-in at the podium — just present.
+                            </p>
 
-              <div className="home-links animate-fade-in delay-300" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                <Link href="/register">
-                  <button className="btn" style={{
-                    padding: '1rem 2rem',
-                    borderRadius: '50px',
-                    background: 'white',
-                    color: 'black',
-                    fontWeight: 700,
-                    fontSize: '1rem',
-                    boxShadow: '0 4px 14px 0 rgba(255,255,255,0.2)'
-                  }}>
-                    Get Started Free
-                  </button>
-                </Link>
-                <Link href="/classroom">
-                  <button className="btn" style={{
-                    padding: '1rem 2rem',
-                    borderRadius: '50px',
-                    background: 'transparent',
-                    color: 'white',
-                    fontWeight: 600,
-                    fontSize: '1rem',
-                    border: '1px solid rgba(255,255,255,0.2)'
-                  }}>
-                    <FiMonitor size={20} />
-                    Classroom Mode
-                  </button>
-                </Link>
-              </div>
+                            <div style={{ display: 'flex', gap: '0.875rem', flexWrap: 'wrap' }}>
+                                <Link href="/register">
+                                    <button className="hero-btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.875rem 1.75rem', borderRadius: '10px', background: 'white', color: 'var(--slate-900)', fontWeight: 700, fontSize: '0.95rem', border: 'none', cursor: 'pointer', transition: 'all 0.25s', boxShadow: '0 4px 20px rgba(255,255,255,0.15)' }}>
+                                        Get Started Free <ArrowRightIcon />
+                                    </button>
+                                </Link>
+                                <Link href="/classroom">
+                                    <button className="hero-btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.875rem 1.75rem', borderRadius: '10px', background: 'transparent', color: 'var(--slate-300)', fontWeight: 600, fontSize: '0.95rem', border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer', transition: 'all 0.25s' }}>
+                                        <MonitorIcon /> Classroom Mode
+                                    </button>
+                                </Link>
+                            </div>
 
-              <div className="trust-badges animate-fade-in delay-400" style={{ marginTop: '3rem', display: 'flex', gap: '2rem', alignItems: 'center' }}>
-                <div style={{ display: 'flex', gap: '-10px' }}>
-                  {[1, 2, 3, 4].map(i => (
-                    <div key={i} style={{
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '50%',
-                      border: '3px solid var(--primary-900)',
-                      background: `hsl(${220 + (i * 10)}, 70%, 80%)`,
-                      marginLeft: i > 1 ? '-10px' : '0'
-                    }}></div>
-                  ))}
-                </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.25rem' }}>
-                    <span style={{ fontWeight: 700, fontSize: '1rem' }}>{stats.average ? stats.average.toFixed(1) : '5.0'}</span>
-                    <div style={{ display: 'flex', gap: '0px' }}>
-                      <FiStar size={14} fill="#F59E0B" color="#F59E0B" />
-                      <FiStar size={14} fill="#F59E0B" color="#F59E0B" />
-                      <FiStar size={14} fill="#F59E0B" color="#F59E0B" />
-                      <FiStar size={14} fill="#F59E0B" color="#F59E0B" />
-                      <FiStar size={14} fill="#F59E0B" color="#F59E0B" />
+                            {/* Trust row */}
+                            <div style={{ marginTop: '2.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem', animation: 'heroFadeIn 0.7s 0.3s both' }}>
+                                <div style={{ display: 'flex' }}>
+                                    {[0, 1, 2, 3].map(i => (
+                                        <div key={i} style={{ width: '34px', height: '34px', borderRadius: '50%', background: `hsl(${220 + i * 15}, 65%, 72%)`, border: '2px solid var(--slate-900)', marginLeft: i > 0 ? '-10px' : '0' }} />
+                                    ))}
+                                </div>
+                                <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.15rem' }}>
+                                        <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'white' }}>{stats.average ? stats.average.toFixed(1) : '5.0'}</span>
+                                        {[1, 2, 3, 4, 5].map(s => <StarIcon key={s} fill={true} />)}
+                                    </div>
+                                    <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--slate-500)' }}>Based on {stats.count || 100}+ student reviews</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right — animated UI card */}
+                        <div className="hero-visuals" style={{ flex: 1, minWidth: '300px', display: 'flex', justifyContent: 'center', animation: 'heroFadeIn 0.7s 0.15s both' }}>
+                            <div style={{ position: 'relative', width: '100%', maxWidth: '420px' }}>
+                                <div style={{ background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(16px)', borderRadius: '20px', padding: '2rem', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 30px 60px -15px rgba(0,0,0,0.5)', transform: 'rotate(-2deg)', transition: 'transform 0.4s ease' }}
+                                    onMouseEnter={e => e.currentTarget.style.transform = 'rotate(0deg) scale(1.02)'}
+                                    onMouseLeave={e => e.currentTarget.style.transform = 'rotate(-2deg)'}>
+                                    <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.5rem' }}>
+                                        {['#EF4444', '#F59E0B', '#10B981'].map(c => <div key={c} style={{ width: '11px', height: '11px', borderRadius: '50%', background: c }} />)}
+                                    </div>
+                                    <div style={{ height: '8px', width: '55%', background: 'rgba(255,255,255,0.08)', borderRadius: '4px', marginBottom: '0.6rem' }} />
+                                    <div style={{ height: '8px', width: '80%', background: 'rgba(255,255,255,0.08)', borderRadius: '4px', marginBottom: '1.75rem' }} />
+                                    <div style={{ background: codeGlow ? 'rgba(99,102,241,0.35)' : 'rgba(99,102,241,0.2)', borderRadius: '12px', padding: '1.25rem', border: `1px solid ${codeGlow ? 'rgba(99,102,241,0.6)' : 'rgba(99,102,241,0.3)'}`, textAlign: 'center', transition: 'all 0.3s ease', boxShadow: codeGlow ? '0 0 20px rgba(99,102,241,0.3)' : 'none' }}>
+                                        <p style={{ fontSize: '0.75rem', color: 'var(--slate-400)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Access Code</p>
+                                        <p style={{ fontFamily: '"Fira Code", monospace', fontSize: '2rem', fontWeight: 800, letterSpacing: '0.2em', color: 'white', transition: 'opacity 0.3s', opacity: codeGlow ? 0.4 : 1 }}>{animatedCode}</p>
+                                    </div>
+                                    <div style={{ marginTop: '1.25rem', display: 'flex', gap: '0.75rem' }}>
+                                        <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.75rem' }}>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--slate-500)', margin: 0 }}>Course</p>
+                                            <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--slate-200)', margin: '0.2rem 0 0' }}>CS 401</p>
+                                        </div>
+                                        <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '0.75rem' }}>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--slate-500)', margin: 0 }}>File</p>
+                                            <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--slate-200)', margin: '0.2rem 0 0' }}>Final.pptx</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {/* Floating badge */}
+                                <div style={{ position: 'absolute', bottom: '-16px', left: '20px', background: 'white', borderRadius: '10px', padding: '0.625rem 1rem', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', gap: '0.5rem', transform: 'rotate(2deg)' }}>
+                                    <span style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%', boxShadow: '0 0 6px #10b981', animation: 'pulse 2s ease-in-out infinite' }} />
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--slate-800)' }}>Ready to present</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                  </div>
-                  <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--primary-200)' }}>
-                    Based on {stats.count || 100}+ reviews
-                  </p>
                 </div>
-              </div>
-            </div>
+            </section>
 
-            {/* Right Visuals - Hidden on small mobile */}
-            <div className="hero-visuals" style={{ flex: '1', minWidth: '300px', display: 'flex', justifyContent: 'center', position: 'relative' }}>
-              <div style={{ position: 'relative', width: '100%', maxWidth: '500px', height: '400px' }}>
-                {/* Main Card */}
-                <div className="animate-fade-in delay-300" style={{
-                  position: 'absolute',
-                  top: '10%',
-                  left: '10%',
-                  right: '10%',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  backdropFilter: 'blur(12px)',
-                  borderRadius: '24px',
-                  padding: '2rem',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-                  transform: 'rotate(-3deg)',
-                  zIndex: 10
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#EF4444' }}></div>
-                      <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#F59E0B' }}></div>
-                      <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#10B981' }}></div>
+            {/* ── LIVE STATS BAND ── */}
+            <section style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)', padding: '0' }}>
+                <div className="container">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', borderTop: '1px solid rgba(255,255,255,0.08)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                        <StatItem value={1200} label="Presentations Uploaded" suffix="+" />
+                        <StatItem value={8500} label="Classroom Sessions" suffix="+" />
+                        <StatItem value={98} label="Uptime" suffix="%" />
+                        <StatItem value={stats.count || 250} label="Happy Students" suffix="+" />
                     </div>
-                    <div style={{ background: 'rgba(255,255,255,0.2)', padding: '0.25rem 0.75rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>Active</div>
-                  </div>
-                  <div style={{ height: '8px', width: '60%', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', marginBottom: '0.75rem' }}></div>
-                  <div style={{ height: '8px', width: '90%', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', marginBottom: '2rem' }}></div>
+                </div>
+            </section>
 
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <div style={{ flex: 1, padding: '1rem', background: 'rgba(79, 70, 229, 0.2)', borderRadius: '12px', border: '1px solid rgba(79, 70, 229, 0.3)' }}>
-                      <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.25rem' }}>856</div>
-                      <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Code</div>
+            {/* ── HOW IT WORKS ── */}
+            <section style={{ padding: '6rem 0', background: 'var(--slate-50)' }}>
+                <div className="container">
+                    <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+                        <p style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--primary-600)', marginBottom: '0.75rem' }}>How It Works</p>
+                        <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', fontWeight: 800, color: 'var(--slate-900)', marginBottom: '1rem' }}>Four steps to a seamless presentation</h2>
+                        <p style={{ fontSize: '1.05rem', color: 'var(--slate-500)', maxWidth: '540px', margin: '0 auto' }}>We handle the file logistics so you can stay focused on delivering your best work.</p>
                     </div>
-                    <div style={{ flex: 1, padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.25rem' }}>CS 101</div>
-                      <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>Final Project.pptx</div>
+
+                    <div ref={featuresRef} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+                        {features.map((f, i) => (
+                            <div key={f.step} className="feature-card" style={{
+                                background: 'white', padding: '2rem', borderRadius: '16px',
+                                border: '1px solid var(--slate-200)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                                opacity: featuresInView ? 1 : 0,
+                                transform: featuresInView ? 'translateY(0)' : 'translateY(24px)',
+                                transition: `opacity 0.5s ${i * 100}ms, transform 0.5s ${i * 100}ms`,
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                                    <div style={{ width: '48px', height: '48px', background: `${f.color}15`, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: f.color }}>
+                                        {f.icon}
+                                    </div>
+                                    <span style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--slate-100)', fontFamily: '"Outfit", sans-serif', lineHeight: 1 }}>{f.step}</span>
+                                </div>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.625rem', color: 'var(--slate-900)' }}>{f.title}</h3>
+                                <p style={{ color: 'var(--slate-500)', fontSize: '0.9rem', lineHeight: 1.65 }}>{f.desc}</p>
+                            </div>
+                        ))}
                     </div>
-                  </div>
                 </div>
+            </section>
 
-                {/* Floating Elements */}
-                <div className="animate-scale-in delay-500" style={{
-                  position: 'absolute',
-                  top: '0',
-                  right: '0',
-                  background: '#4f46e5',
-                  padding: '1rem',
-                  borderRadius: '16px',
-                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)',
-                  zIndex: 20,
-                  transform: 'rotate(6deg)'
-                }}>
-                  <FiUpload size={24} color="white" />
+            {/* ── CTA BANNER ── */}
+            <section style={{ background: 'var(--slate-900)', padding: '5rem 0', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.15) 0%, transparent 60%)', pointerEvents: 'none' }} />
+                <div className="container" style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+                    <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', fontWeight: 800, color: 'white', marginBottom: '1rem' }}>Ready to simplify your presentations?</h2>
+                    <p style={{ color: 'var(--slate-400)', fontSize: '1.05rem', marginBottom: '2.5rem', maxWidth: '480px', margin: '0 auto 2.5rem' }}>Join hundreds of students who never worry about USB drives or classroom logins again.</p>
+                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <Link href="/register">
+                            <button className="hero-btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.875rem 2rem', borderRadius: '10px', background: 'white', color: 'var(--slate-900)', fontWeight: 700, fontSize: '0.95rem', border: 'none', cursor: 'pointer', transition: 'all 0.25s' }}>
+                                Create Free Account <ArrowRightIcon />
+                            </button>
+                        </Link>
+                        <Link href="/classroom">
+                            <button style={{ padding: '0.875rem 2rem', borderRadius: '10px', background: 'transparent', color: 'var(--slate-300)', fontWeight: 600, fontSize: '0.95rem', border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer', transition: 'all 0.2s' }}>
+                                Enter Classroom Code
+                            </button>
+                        </Link>
+                    </div>
                 </div>
+            </section>
 
-                <div className="animate-scale-in delay-700" style={{
-                  position: 'absolute',
-                  bottom: '40px',
-                  left: '0',
-                  background: 'white',
-                  color: 'var(--primary-900)',
-                  padding: '0.75rem 1.25rem',
-                  borderRadius: '12px',
-                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)',
-                  zIndex: 20,
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  transform: 'rotate(-4deg)'
-                }}>
-                  <span style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%' }}></span>
-                  Ready
-                </div>
-              </div>
-            </div>
-          </div>
+            <style>{`
+                .feature-card:hover { transform: translateY(-4px) !important; box-shadow: 0 16px 40px rgba(0,0,0,0.09) !important; border-color: var(--primary-200) !important; }
+                .hero-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,255,255,0.2); }
+                .hero-btn-secondary:hover { background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.3) !important; }
+                @keyframes heroFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes blobFloat { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.08) translate(10px, -15px); } }
+                @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+                @media (max-width: 900px) { .hero-visuals { display: none !important; } }
+            `}</style>
         </div>
-      </div>
-
-      {/* 
-        -----------------------------------------------------------------
-        FEATURES SECTION
-        -----------------------------------------------------------------
-      */}
-      <div className="features-section" style={{ padding: '6rem 0', background: 'var(--slate-50)' }}>
-        <div className="container">
-          <div style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 4rem' }}>
-            <h2 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--slate-900)' }}>
-              Why Students Love It
-            </h2>
-            <p style={{ fontSize: '1.125rem', color: 'var(--slate-500)', lineHeight: 1.6 }}>
-              We've streamlined the entire presentation workflow so you can focus on delivering your best work, not fumbling with USB drives.
-            </p>
-          </div>
-
-          <div className="feature-grid" style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '2rem'
-          }}>
-            {/* 1. Account */}
-            <div className="feature-card animate-scale-in delay-100" style={{
-              background: 'white',
-              padding: '2rem',
-              borderRadius: '24px',
-              border: '1px solid var(--slate-200)',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
-            }}>
-              <div style={{ width: '50px', height: '50px', background: 'var(--primary-50)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-600)', marginBottom: '1.5rem' }}>
-                <span style={{ fontWeight: 800, fontSize: '1.25rem' }}>1</span>
-              </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.75rem', fontFamily: 'Outfit, sans-serif' }}>Create Account</h3>
-              <p style={{ color: 'var(--slate-500)', fontSize: '0.95rem', lineHeight: '1.6' }}>
-                Sign up in seconds to get your own personal dashboard for managing all your presentation files in one place.
-              </p>
-            </div>
-
-            {/* 2. Upload */}
-            <div className="feature-card animate-scale-in delay-200" style={{
-              background: 'white',
-              padding: '2rem',
-              borderRadius: '24px',
-              border: '1px solid var(--slate-200)',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
-            }}>
-              <div style={{ width: '50px', height: '50px', background: 'var(--primary-50)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-600)', marginBottom: '1.5rem' }}>
-                <FiUpload size={24} />
-              </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.75rem', fontFamily: 'Outfit, sans-serif' }}>Upload Files</h3>
-              <p style={{ color: 'var(--slate-500)', fontSize: '0.95rem', lineHeight: '1.6' }}>
-                Support for PowerPoint, PDF, and Media. Tag your presentations with course names for easy organization.
-              </p>
-            </div>
-
-            {/* 3. Get Code */}
-            <div className="feature-card animate-scale-in delay-300" style={{
-              background: 'white',
-              padding: '2rem',
-              borderRadius: '24px',
-              border: '1px solid var(--slate-200)',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
-            }}>
-              <div style={{ width: '50px', height: '50px', background: 'var(--primary-50)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-600)', marginBottom: '1.5rem' }}>
-                <FiKey size={24} />
-              </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.75rem', fontFamily: 'Outfit, sans-serif' }}>Get Unique Code</h3>
-              <p style={{ color: 'var(--slate-500)', fontSize: '0.95rem', lineHeight: '1.6' }}>
-                Every upload generates a unique 6-digit access code (e.g. 856-992) that you can use instantly.
-              </p>
-            </div>
-
-            {/* 4. Present */}
-            <div className="feature-card animate-scale-in delay-400" style={{
-              background: 'white',
-              padding: '2rem',
-              borderRadius: '24px',
-              border: '1px solid var(--slate-200)',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
-            }}>
-              <div style={{ width: '50px', height: '50px', background: 'var(--primary-50)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-600)', marginBottom: '1.5rem' }}>
-                <FiMonitor size={24} />
-              </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.75rem', fontFamily: 'Outfit, sans-serif' }}>Present Instantly</h3>
-              <p style={{ color: 'var(--slate-500)', fontSize: '0.95rem', lineHeight: '1.6' }}>
-                Enter the code on the classroom computer to instantly load your presentation without signing in.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Styles for hover effects */}
-      <style jsx>{`
-        .feature-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
-          border-color: var(--primary-200) !important;
-        }
-        @media (max-width: 900px) {
-           .hero-visuals {
-             display: none !important;
-           }
-           .home-hero-section {
-             text-align: center;
-             padding: 4rem 1rem !important;
-           }
-           .home-links, .trust-badges {
-             justify-content: center;
-           }
-           h1 {
-             font-size: 2.5rem !important;
-           }
-        }
-      `}</style>
-    </div>
-  );
+    );
 }

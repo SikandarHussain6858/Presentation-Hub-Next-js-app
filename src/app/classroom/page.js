@@ -34,7 +34,25 @@ function ClassroomContent() {
             }
 
             // API returns an array, take the first one
-            setPresentation(result.data[0]);
+            const pres = result.data[0];
+            setPresentation(pres);
+
+            // Track view event (non-blocking)
+            try {
+                fetch('/api/analytics/track', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        presentationId: pres._id,
+                        eventType: 'view',
+                    }),
+                }).catch(() => {
+                    // Silently fail if tracking fails
+                });
+            } catch (trackingError) {
+                console.error('Analytics tracking error:', trackingError);
+                // Continue regardless
+            }
         } catch (err) {
             console.error(err);
             setError(err.message || 'Presentation not found');
