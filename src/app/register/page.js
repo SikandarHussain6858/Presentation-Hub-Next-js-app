@@ -70,14 +70,10 @@ const Register = () => {
             console.log('Response data:', data);
 
             if (res.ok && data.success) {
-                toast.success('Registration successful! Redirecting...');
-                console.log('Registration successful, redirecting to dashboard...');
-                console.log('Cookies after registration:', document.cookie);
-                // Wait a moment for cookie to be set, then redirect
+                toast.success('Account created! Please sign in to continue.');
                 setTimeout(() => {
-                    console.log('Redirecting now...');
-                    window.location.href = '/dashboard';
-                }, 1000);
+                    router.push('/login');
+                }, 1200);
             } else {
                 console.error('Registration failed:', data.error);
                 toast.error(data.error || 'Registration failed');
@@ -98,7 +94,7 @@ const Register = () => {
         >
             <button
                 type="button"
-                onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+                onClick={() => signIn('google', { callbackUrl: '/login' })}
                 className="btn"
                 style={{
                     width: '100%',
