@@ -3,6 +3,8 @@ import dbConnect from '../../../lib/db';
 import Analytics from '../../../models/Analytics';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]/route';
+import { cookies } from 'next/headers';
+import { verifyToken } from '../../../lib/auth';
 
 export async function GET(request) {
     try {
@@ -10,20 +12,23 @@ export async function GET(request) {
 
         // Get authenticated user
         const session = await getServerSession(authOptions);
+        let userId = session?.user?.uid || session?.user?.email;
 
-        if (!session) {
-            return NextResponse.json(
-                { success: false, error: 'Unauthorized' },
-                { status: 401 }
-            );
+        if (!userId) {
+            const cookieStore = await cookies();
+            const token = cookieStore.get('session_token')?.value;
+            if (token) {
+                const payload = await verifyToken(token);
+                if (payload) {
+                    userId = payload.uid || payload.email;
+                }
+            }
         }
-
-        const userId = session.user?.uid || session.user?.email;
 
         if (!userId) {
             return NextResponse.json(
-                { success: false, error: 'User ID not found in session' },
-                { status: 400 }
+                { success: false, error: 'Unauthorized' },
+                { status: 401 }
             );
         }
 
