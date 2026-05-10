@@ -68,20 +68,24 @@ function LineChart({ data }) {
     );
 }
 
+import { FcBinoculars, FcDownload, FcComboChart } from 'react-icons/fc';
+
 /* ── Stat Card ── */
-function StatCard({ label, value, icon, delay = 0 }) {
+function StatCard({ label, value, IconComponent, delay = 0, animationClass }) {
     const animated = useCountUp(value, 1000);
     return (
         <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem', animation: `fadeInUp 0.5s ${delay}ms both`, background: '#ffffff', border: '1px solid var(--slate-200)' }}>
             <div style={{ 
-                width: '3.5rem', height: '3.5rem', 
-                background: 'var(--primary-50)', 
-                color: 'var(--primary-600)', 
-                borderRadius: 'var(--radius-lg)', 
+                width: '4.5rem', height: '4.5rem', 
+                background: 'var(--slate-50)', 
+                borderRadius: 'var(--radius-2xl)', 
                 display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                flexShrink: 0 
+                flexShrink: 0,
+                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
             }}>
-                {icon}
+                <div className={`sticker-icon ${animationClass}`}>
+                    <IconComponent size={40} />
+                </div>
             </div>
             <div>
                 <div style={{ color: 'var(--slate-500)', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
@@ -193,10 +197,6 @@ export default function AnalyticsDashboard() {
     const topPresentations = analytics?.topPresentations || [];
     const chartData = analytics?.charts?.viewsByDay || [];
 
-    const EyeIcon = <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>;
-    const DownloadIcon = <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>;
-    const PresentationIcon = <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>;
-    
     return (
         <div className="container animate-fade-in" style={{ padding: '2rem 1rem', paddingBottom: '4rem', background: 'var(--bg-body)', minHeight: '100vh' }}>
             <style>{`
@@ -210,6 +210,37 @@ export default function AnalyticsDashboard() {
                     .overview-grid {
                         grid-template-columns: 1fr;
                     }
+                }
+                
+                /* Sticker Animations */
+                .sticker-icon {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+                }
+                
+                .anim-float {
+                    animation: floatSticker 3s ease-in-out infinite;
+                }
+                .anim-bounce {
+                    animation: bounceSticker 2s ease-in-out infinite;
+                }
+                .anim-pulse {
+                    animation: pulseSticker 2.5s ease-in-out infinite;
+                }
+
+                @keyframes floatSticker {
+                    0%, 100% { transform: translateY(0) rotate(0deg); }
+                    50% { transform: translateY(-8px) rotate(3deg); }
+                }
+                @keyframes bounceSticker {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.15) translateY(-5px); }
+                }
+                @keyframes pulseSticker {
+                    0%, 100% { transform: scale(1); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+                    50% { transform: scale(1.05); filter: drop-shadow(0 8px 12px rgba(99,102,241,0.3)); }
                 }
             `}</style>
 
@@ -231,9 +262,9 @@ export default function AnalyticsDashboard() {
 
             {/* Stat Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
-                <StatCard label="Total Views" value={stats.totalViews || 0} icon={EyeIcon} delay={0} />
-                <StatCard label="Downloads" value={stats.totalDownloads || 0} icon={DownloadIcon} delay={100} />
-                <StatCard label="Presentations" value={stats.totalPresentations || 0} icon={PresentationIcon} delay={200} />
+                <StatCard label="Total Views" value={stats.totalViews || 0} IconComponent={FcBinoculars} delay={0} animationClass="anim-float" />
+                <StatCard label="Downloads" value={stats.totalDownloads || 0} IconComponent={FcDownload} delay={100} animationClass="anim-bounce" />
+                <StatCard label="Presentations" value={stats.totalPresentations || 0} IconComponent={FcComboChart} delay={200} animationClass="anim-pulse" />
             </div>
 
             {/* Tabs */}

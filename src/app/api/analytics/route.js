@@ -33,50 +33,53 @@ export async function GET(request) {
             );
         }
 
-        // Fetch all analytics for this user
+        // Fetch all presentations for this user
+        const presentationsDocs = await Presentation.find({
+            $or: [{ userId: userId }, { userEmail: userId }]
+        }).sort({ createdAt: -1 });
+        
         const userAnalytics = await Analytics.find({ userId }).sort({ createdAt: -1 });
 
         // Calculate aggregated stats
         let totalViews = 0;
         let totalDownloads = 0;
-        let totalLiveSessions = 0;
         let totalViewMinutes = 0;
 
+        const analyticsMap = {};
         userAnalytics.forEach((analytics) => {
+            analyticsMap[analytics.presentationId.toString()] = analytics;
             totalViews += analytics.viewCount;
             totalDownloads += analytics.downloadCount;
-            totalLiveSessions += analytics.liveSessionCount;
             totalViewMinutes += analytics.totalViewMinutes;
         });
 
         // Prepare presentation-level data
-        const presentations = userAnalytics.map((analytics) => ({
-            id: analytics._id,
-            presentationId: analytics.presentationId,
-            name: analytics.presentationName,
-            views: analytics.viewCount,
-            downloads: analytics.downloadCount,
-            liveSessions: analytics.liveSessionCount,
-            totalViewMinutes: analytics.totalViewMinutes,
-            lastViewed: analytics.updatedAt || analytics.createdAt,
-            createdAt: analytics.createdAt,
-        }));
+        const presentations = presentationsDocs.map((p) => {
+            const a = analyticsMap[p._id.toString()];
+            return {
+                id: p._id.toString(),
+                presentationId: p._id.toString(),
+                name: p.presentationName,
+                views: a ? a.viewCount : 0,
+                downloads: a ? a.downloadCount : 0,
+                totalViewMinutes: a ? a.totalViewMinutes : 0,
+                lastViewed: a ? (a.updatedAt || a.createdAt) : p.createdAt,
+                createdAt: p.createdAt,
+            };
+        });
 
         // Calculate daily views for chart
         const viewsByDay = {};
         const downloadsByDay = {};
-        const liveSessionsByDay = {};
 
         userAnalytics.forEach((analytics) => {
             analytics.accessHistory.forEach((entry) => {
                 if (!viewsByDay[entry.date]) {
                     viewsByDay[entry.date] = 0;
                     downloadsByDay[entry.date] = 0;
-                    liveSessionsByDay[entry.date] = 0;
                 }
                 viewsByDay[entry.date] += entry.viewCount;
                 downloadsByDay[entry.date] += entry.downloadCount;
-                liveSessionsByDay[entry.date] += entry.liveSessionCount;
             });
         });
 
@@ -87,16 +90,15 @@ export async function GET(request) {
                 date,
                 views: viewsByDay[date],
                 downloads: downloadsByDay[date],
-                liveSessions: liveSessionsByDay[date],
             }));
 
         // Get top presentations (by views)
-        const topPresentations = presentations
+        const topPresentations = [...presentations]
             .sort((a, b) => b.views - a.views)
             .slice(0, 3);
 
         // Get most recent presentations (last accessed)
-        const recentPresentations = presentations
+        const recentPresentations = [...presentations]
             .sort((a, b) => new Date(b.lastViewed) - new Date(a.lastViewed))
             .slice(0, 5);
 
@@ -108,7 +110,6 @@ export async function GET(request) {
                         totalPresentations: presentations.length,
                         totalViews,
                         totalDownloads,
-                        totalLiveSessions,
                         totalViewMinutes,
                     },
                     presentations,
