@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '../../../lib/db';
 import Analytics from '../../../models/Analytics';
+import Presentation from '../../../models/Presentation';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]/route';
 import { cookies } from 'next/headers';

@@ -24,14 +24,14 @@ function useCountUp(target, duration = 1200) {
 function LineChart({ data }) {
     if (!data || data.length === 0) return null;
     const W = 700, H = 250, PAD = 40;
-    const maxV = Math.max(...data.map(d => d.views), 1);
-    const pts = data.map((d, i) => ({
+    const maxV = Math.max(...data.map(d => Math.max(d.views, d.downloads)), 1);
+    const ptsViews = data.map((d, i) => ({
         x: PAD + (i / Math.max(data.length - 1, 1)) * (W - PAD * 2),
         y: PAD + (1 - d.views / maxV) * (H - PAD * 2),
         d,
     }));
-    const polyline = pts.map(p => `${p.x},${p.y}`).join(' ');
-    const area = `M${pts[0].x},${H - PAD} ` + pts.map(p => `L${p.x},${p.y}`).join(' ') + ` L${pts[pts.length - 1].x},${H - PAD} Z`;
+    const polylineViews = ptsViews.map(p => `${p.x},${p.y}`).join(' ');
+    const areaViews = `M${ptsViews[0].x},${H - PAD} ` + ptsViews.map(p => `L${p.x},${p.y}`).join(' ') + ` L${ptsViews[ptsViews.length - 1].x},${H - PAD} Z`;
 
     return (
         <div style={{ overflowX: 'auto', width: '100%' }}>
@@ -48,17 +48,17 @@ function LineChart({ data }) {
                     return <line key={t} x1={PAD} y1={y} x2={W - PAD} y2={y} stroke="var(--slate-200)" strokeWidth="1" strokeDasharray="4 4" />;
                 })}
                 {/* Area fill */}
-                <path d={area} fill="url(#chartGrad)" />
+                <path d={areaViews} fill="url(#chartGrad)" />
                 {/* Line */}
-                <polyline points={polyline} fill="none" stroke="var(--primary-500)" strokeWidth="3" strokeLinejoin="round" />
+                <polyline points={polylineViews} fill="none" stroke="var(--primary-500)" strokeWidth="3" strokeLinejoin="round" />
                 {/* Dots */}
-                {pts.map((p, i) => (
+                {ptsViews.map((p, i) => (
                     <g key={i}>
                         <circle cx={p.x} cy={p.y} r="5" fill="var(--bg-card)" stroke="var(--primary-500)" strokeWidth="2.5" />
                     </g>
                 ))}
                 {/* X labels */}
-                {pts.filter((_, i) => i % Math.ceil(pts.length / 7) === 0 || i === pts.length - 1).map((p, i) => (
+                {ptsViews.filter((_, i) => i % Math.ceil(ptsViews.length / 7) === 0 || i === ptsViews.length - 1).map((p, i) => (
                     <text key={i} x={p.x} y={H - 10} textAnchor="middle" fontSize="12" fill="var(--slate-500)" fontWeight="500">
                         {new Date(p.d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </text>
@@ -72,14 +72,14 @@ function LineChart({ data }) {
 function StatCard({ label, value, icon, delay = 0 }) {
     const animated = useCountUp(value, 1000);
     return (
-        <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem', animation: `fadeInUp 0.5s ${delay}ms both` }}>
+        <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1.25rem', animation: `fadeInUp 0.5s ${delay}ms both`, background: '#ffffff', border: '1px solid var(--slate-200)' }}>
             <div style={{ 
                 width: '3.5rem', height: '3.5rem', 
                 background: 'var(--primary-50)', 
                 color: 'var(--primary-600)', 
                 borderRadius: 'var(--radius-lg)', 
                 display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                fontSize: '1.5rem', flexShrink: 0 
+                flexShrink: 0 
             }}>
                 {icon}
             </div>
@@ -104,11 +104,12 @@ function TopRow({ pres, rank }) {
         <div style={{
             display: 'flex', alignItems: 'center', gap: '1rem',
             padding: '1rem',
-            borderBottom: '1px solid var(--border-color)',
+            borderBottom: '1px solid var(--slate-200)',
             transition: 'background 0.2s',
+            background: '#ffffff'
         }}
             onMouseEnter={e => e.currentTarget.style.background = 'var(--slate-50)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            onMouseLeave={e => e.currentTarget.style.background = '#ffffff'}
         >
             <div style={{ 
                 width: '32px', height: '32px', borderRadius: '50%', 
@@ -163,7 +164,7 @@ export default function AnalyticsDashboard() {
     };
 
     if (authLoading || loading) return (
-        <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem', background: 'var(--bg-body)' }}>
             <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid var(--primary-100)', borderTopColor: 'var(--primary-600)', animation: 'spin 1s linear infinite' }} />
             <p style={{ color: 'var(--slate-500)', fontWeight: 500 }}>Loading analytics...</p>
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -171,9 +172,13 @@ export default function AnalyticsDashboard() {
     );
 
     if (error) return (
-        <div className="container" style={{ padding: '4rem 1rem', display: 'flex', justifyContent: 'center' }}>
-            <div className="card" style={{ padding: '2.5rem', textAlign: 'center', maxWidth: '400px', width: '100%' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+        <div className="container" style={{ padding: '4rem 1rem', display: 'flex', justifyContent: 'center', background: 'var(--bg-body)', minHeight: '80vh' }}>
+            <div className="card" style={{ padding: '2.5rem', textAlign: 'center', maxWidth: '400px', width: '100%', background: '#ffffff' }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2" style={{ margin: '0 auto 1rem' }}>
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
                 <h3 style={{ color: 'var(--slate-800)', fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Failed to Load</h3>
                 <p style={{ color: 'var(--slate-500)', marginBottom: '2rem' }}>{error}</p>
                 <Link href="/dashboard" className="btn btn-primary">
@@ -188,8 +193,12 @@ export default function AnalyticsDashboard() {
     const topPresentations = analytics?.topPresentations || [];
     const chartData = analytics?.charts?.viewsByDay || [];
 
+    const EyeIcon = <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>;
+    const DownloadIcon = <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>;
+    const PresentationIcon = <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>;
+    
     return (
-        <div className="container animate-fade-in" style={{ padding: '2rem 1rem', paddingBottom: '4rem' }}>
+        <div className="container animate-fade-in" style={{ padding: '2rem 1rem', paddingBottom: '4rem', background: 'var(--bg-body)', minHeight: '100vh' }}>
             <style>{`
                 .overview-grid {
                     display: grid;
@@ -205,13 +214,13 @@ export default function AnalyticsDashboard() {
             `}</style>
 
             {/* Header */}
-            <div className="dashboard-header" style={{ marginBottom: '2rem' }}>
+            <div className="dashboard-header" style={{ marginBottom: '2rem', background: '#ffffff', borderColor: 'var(--slate-200)' }}>
                 <div>
                     <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--slate-500)', fontSize: '0.875rem', fontWeight: 500, marginBottom: '1rem' }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
                         Back to Dashboard
                     </Link>
-                    <h1>Analytics</h1>
+                    <h1 style={{ color: 'var(--slate-900)' }}>Analytics</h1>
                     <p style={{ color: 'var(--slate-500)', marginTop: '0.25rem' }}>Track your presentation performance and engagement.</p>
                 </div>
                 <button onClick={fetchAnalytics} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -222,14 +231,13 @@ export default function AnalyticsDashboard() {
 
             {/* Stat Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
-                <StatCard label="Total Views" value={stats.totalViews || 0} icon="👁️" delay={0} />
-                <StatCard label="Downloads" value={stats.totalDownloads || 0} icon="📥" delay={100} />
-                <StatCard label="Live Sessions" value={stats.totalLiveSessions || 0} icon="📡" delay={200} />
-                <StatCard label="Presentations" value={stats.totalPresentations || 0} icon="📊" delay={300} />
+                <StatCard label="Total Views" value={stats.totalViews || 0} icon={EyeIcon} delay={0} />
+                <StatCard label="Downloads" value={stats.totalDownloads || 0} icon={DownloadIcon} delay={100} />
+                <StatCard label="Presentations" value={stats.totalPresentations || 0} icon={PresentationIcon} delay={200} />
             </div>
 
             {/* Tabs */}
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--slate-200)' }}>
                 {['overview', 'presentations'].map(tab => (
                     <button 
                         key={tab} 
@@ -255,7 +263,7 @@ export default function AnalyticsDashboard() {
                 <div className="overview-grid">
                     {/* Line Chart */}
                     {chartData.length > 0 && (
-                        <div className="card delay-100 animate-fade-in" style={{ padding: '1.5rem' }}>
+                        <div className="card delay-100 animate-fade-in" style={{ padding: '1.5rem', background: '#ffffff', borderColor: 'var(--slate-200)' }}>
                             <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', color: 'var(--slate-800)' }}>Views Over Time</h2>
                             <LineChart data={chartData} />
                         </div>
@@ -263,7 +271,7 @@ export default function AnalyticsDashboard() {
 
                     {/* Top Presentations */}
                     {topPresentations.length > 0 && (
-                        <div className="card delay-200 animate-fade-in" style={{ padding: '1.5rem' }}>
+                        <div className="card delay-200 animate-fade-in" style={{ padding: '1.5rem', background: '#ffffff', borderColor: 'var(--slate-200)' }}>
                             <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', color: 'var(--slate-800)' }}>Top Performing</h2>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 {topPresentations.map((pres, idx) => (
@@ -275,8 +283,12 @@ export default function AnalyticsDashboard() {
 
                     {/* Empty state for overview */}
                     {chartData.length === 0 && topPresentations.length === 0 && (
-                        <div className="card delay-100 animate-fade-in" style={{ gridColumn: '1 / -1', padding: '4rem 2rem', textAlign: 'center' }}>
-                            <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>📊</div>
+                        <div className="card delay-100 animate-fade-in" style={{ gridColumn: '1 / -1', padding: '4rem 2rem', textAlign: 'center', background: '#ffffff', borderColor: 'var(--slate-200)' }}>
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--slate-300)" strokeWidth="2" style={{ margin: '0 auto 1rem' }}>
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="3" y1="9" x2="21" y2="9"></line>
+                                <line x1="9" y1="21" x2="9" y2="9"></line>
+                            </svg>
                             <h3 style={{ fontSize: '1.25rem', color: 'var(--slate-800)', marginBottom: '0.5rem' }}>No Data Yet</h3>
                             <p style={{ color: 'var(--slate-500)' }}>Share your presentations to start generating analytics!</p>
                             <Link href="/dashboard" className="btn btn-primary" style={{ marginTop: '1.5rem' }}>
@@ -288,16 +300,15 @@ export default function AnalyticsDashboard() {
             )}
 
             {activeTab === 'presentations' && (
-                <div className="table-container delay-100 animate-fade-in">
+                <div className="table-container delay-100 animate-fade-in" style={{ background: '#ffffff', borderColor: 'var(--slate-200)' }}>
                     {presentations.length > 0 ? (
                         <table className="table">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th style={{ textAlign: 'center' }}>Views</th>
-                                    <th style={{ textAlign: 'center' }}>Downloads</th>
-                                    <th style={{ textAlign: 'center' }}>Live Sessions</th>
-                                    <th>Last Viewed</th>
+                                    <th style={{ background: 'var(--slate-50)' }}>Name</th>
+                                    <th style={{ textAlign: 'center', background: 'var(--slate-50)' }}>Views</th>
+                                    <th style={{ textAlign: 'center', background: 'var(--slate-50)' }}>Downloads</th>
+                                    <th style={{ background: 'var(--slate-50)' }}>Last Viewed</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -315,9 +326,6 @@ export default function AnalyticsDashboard() {
                                         <td style={{ textAlign: 'center' }}>
                                             <span style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '0.25rem 0.75rem', borderRadius: '9999px', fontSize: '0.85rem', fontWeight: 600 }}>{pres.downloads}</span>
                                         </td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            <span style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning)', padding: '0.25rem 0.75rem', borderRadius: '9999px', fontSize: '0.85rem', fontWeight: 600 }}>{pres.liveSessions}</span>
-                                        </td>
                                         <td style={{ color: 'var(--slate-500)', fontSize: '0.9rem' }}>
                                             {new Date(pres.lastViewed).toLocaleDateString()}
                                         </td>
@@ -327,7 +335,9 @@ export default function AnalyticsDashboard() {
                         </table>
                     ) : (
                         <div style={{ padding: '4rem 2rem', textAlign: 'center' }}>
-                            <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>📂</div>
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--slate-300)" strokeWidth="2" style={{ margin: '0 auto 1rem' }}>
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>
                             <h3 style={{ fontSize: '1.25rem', color: 'var(--slate-800)', marginBottom: '0.5rem' }}>No Presentations Yet</h3>
                             <p style={{ color: 'var(--slate-500)' }}>Create your first presentation to get started.</p>
                             <Link href="/dashboard" className="btn btn-primary" style={{ marginTop: '1.5rem' }}>
